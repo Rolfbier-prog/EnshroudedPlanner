@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 env:
-  PROJECT_PATH: EnshroudedPlanner/EnshroudedPlanner.csproj   # <--- anpassen
+  PROJECT_PATH: EnshroudedPlanner.csproj   # <--- anpassen
   RID: win-x64
   SELF_CONTAINED: "true"
   PUBLISH_DIR: publish
