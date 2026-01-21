@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+
+    <!-- App-Version (für Titelzeile + Releases) -->
+    <Version>0.1.1</Version>
+    <AssemblyVersion>0.1.0.1</AssemblyVersion>
+    <FileVersion>0.1.0.1</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\pieces\piece_library.v1.json" />
+    <None Remove="Assets\pieces\piece_library.v2.json" />
+    <None Remove="Assets\projects\presets\altar_L1.json" />
+    <None Remove="Assets\projects\presets\altar_L2.json" />
+    <None Remove="Assets\projects\presets\altar_L3.json" />
+    <None Remove="Assets\projects\presets\altar_L4.json" />
+    <None Remove="Assets\projects\presets\altar_LF.json" />
+    <None Remove="Assets\Textures\atlas_4x3_32px.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\pieces\piece_library.v1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\pieces\piece_library.v2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\projects\presets\altar_L1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\projects\presets\altar_L2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\projects\presets\altar_L3.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\projects\presets\altar_L4.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\projects\presets\altar_LF.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HelixToolkit.Wpf" Version="3.1.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Velopack" Version="0.0.1298" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Textures\atlas_4x3_32px.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+	<ApplicationDefinition Remove="App.xaml" />
+	<Page Include="App.xaml" />
+</ItemGroup>
+
+<PropertyGroup>
+	<StartupObject>EnshroudedPlanner.App</StartupObject>
+</PropertyGroup>
+
+</Project>

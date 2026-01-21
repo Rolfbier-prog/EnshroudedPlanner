@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1",
+  "units": { "voxelSizeMeters": 0.5 },
+  "buildZone": {
+    "mode": "FLAME_ALTAR",
+    "flameAltarLevel": 3,
+    "sizeVoxels": { "x": 240, "y": 240, "z": 240 },
+    "origin": "CENTER",
+    "yMode": "GROUNDED",
+    "groundY": 0,
+    "altarOffsetVoxels": { "x": 0, "y": 0, "z": 0 },
+    "reserveFlameAltarCore": true,
+    "reservedVolumes": [
+      {
+        "id": "flame_altar_core",
+        "shape": "BOX",
+        "min": { "x": -4, "y": 0, "z": -4 },
+        "max": { "x": 3, "y": 7, "z": 3 },
+        "reason": "Flame Altar footprint (8x8x8 voxels)"
+      }
+    ]
+  },
+  "placedPieces": []
+}
+

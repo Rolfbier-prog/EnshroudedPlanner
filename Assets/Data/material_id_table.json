@@ -1,0 +1,140 @@
+{
+  "atlas": "atlas_4x3_32px.png",
+  "tileSize": 32,
+  "cols": 4,
+  "rows": 3,
+  "materials": [
+    {
+      "id": 0,
+      "key": "stonegraylight",
+      "filename": "stonegraylight.png",
+      "row": 0,
+      "col": 0,
+      "u0": 0.0,
+      "v0": 0.0,
+      "u1": 0.25,
+      "v1": 0.333
+    },
+    {
+      "id": 1,
+      "key": "stonegraydark",
+      "filename": "stonegraydark.png",
+      "row": 0,
+      "col": 1,
+      "u0": 0.25,
+      "v0": 0.0,
+      "u1": 0.5,
+      "v1": 0.333
+    },
+    {
+      "id": 2,
+      "key": "woodbrownlight",
+      "filename": "woodbrownlight.png",
+      "row": 0,
+      "col": 2,
+      "u0": 0.5,
+      "v0": 0.0,
+      "u1": 0.75,
+      "v1": 0.333
+    },
+    {
+      "id": 3,
+      "key": "woodbrowndark",
+      "filename": "woodbrowndark.png",
+      "row": 0,
+      "col": 3,
+      "u0": 0.75,
+      "v0": 0.0,
+      "u1": 1.0,
+      "v1": 0.333
+    },
+    {
+      "id": 4,
+      "key": "bricksand",
+      "filename": "bricksand.png",
+      "row": 1,
+      "col": 0,
+      "u0": 0.0,
+      "v0": 0.333,
+      "u1": 0.25,
+      "v1": 0.667
+    },
+    {
+      "id": 5,
+      "key": "brickred",
+      "filename": "brickred.png",
+      "row": 1,
+      "col": 1,
+      "u0": 0.25,
+      "v0": 0.333,
+      "u1": 0.5,
+      "v1": 0.667
+    },
+    {
+      "id": 6,
+      "key": "metallight",
+      "filename": "metallight.png",
+      "row": 1,
+      "col": 2,
+      "u0": 0.5,
+      "v0": 0.333,
+      "u1": 0.75,
+      "v1": 0.667
+    },
+    {
+      "id": 7,
+      "key": "metaldark",
+      "filename": "metaldark.png",
+      "row": 1,
+      "col": 3,
+      "u0": 0.75,
+      "v0": 0.333,
+      "u1": 1.0,
+      "v1": 0.667
+    },
+    {
+      "id": 8,
+      "key": "glowyellow",
+      "filename": "glowyellow.png",
+      "row": 2,
+      "col": 0,
+      "u0": 0.0,
+      "v0": 0.667,
+      "u1": 0.25,
+      "v1": 1.0
+    },
+    {
+      "id": 9,
+      "key": "glowblue",
+      "filename": "glowblue.png",
+      "row": 2,
+      "col": 1,
+      "u0": 0.25,
+      "v0": 0.667,
+      "u1": 0.5,
+      "v1": 1.0
+    },
+    {
+      "id": 10,
+      "key": "glowred",
+      "filename": "glowred.png",
+      "row": 2,
+      "col": 2,
+      "u0": 0.5,
+      "v0": 0.667,
+      "u1": 0.75,
+      "v1": 1.0
+    },
+    {
+      "id": 11,
+      "key": "glowwhite",
+      "filename": "glowwhite.png",
+      "row": 2,
+      "col": 3,
+      "u0": 0.75,
+      "v0": 0.667,
+      "u1": 1.0,
+      "v1": 1.0
+    }
+  ]
+}

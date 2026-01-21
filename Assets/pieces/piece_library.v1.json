@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "units": {
+    "voxelSizeMeters": 0.5
+  },
+  "defaults": {
+    "wallThicknessVoxels": 1,
+    "pivot": "MIN_CORNER"
+  },
+  "categories": [
+    { "id": "WALL_1M", "displayName": "Wände 1M" },
+    { "id": "WALL_2M", "displayName": "Wände 2M" },
+    { "id": "WALL_4M", "displayName": "Wände 4M" },
+    { "id": "FLOOR_1M", "displayName": "Böden 1M" },
+    { "id": "FLOOR_2M", "displayName": "Böden 2M" },
+    { "id": "FLOOR_4M", "displayName": "Böden 4M" },
+    { "id": "BLOCK_1M", "displayName": "Blöcke 1M" },
+    { "id": "BLOCK_2M", "displayName": "Blöcke 2M" },
+    { "id": "BLOCK_4M", "displayName": "Blöcke 4M" },
+    { "id": "TERRAIN_1M", "displayName": "Terrain 1M" },
+    { "id": "TERRAIN_2M", "displayName": "Terrain 2M" },
+    { "id": "TERRAIN_4M", "displayName": "Terrain 4M" },
+    { "id": "ROOF_2M", "displayName": "Dächer 2M" },
+    { "id": "ROOF_4M", "displayName": "Dächer 4M" },
+    { "id": "ALTAR", "displayName": "Flammenaltar" }
+  ],
+  "materials": [
+    { "id": "generic", "displayName": "Generic", "uiColor": "#BBBBBB" },
+    { "id": "wood", "displayName": "Holz", "uiColor": "#C19A6B" },
+    { "id": "stone", "displayName": "Stein", "uiColor": "#A0A0A0" },
+    { "id": "terrain", "displayName": "Terrain", "uiColor": "#7C9A4A" }
+  ],
+  "pieces": [
+    {
+      "id": "base/block/1m/cube/full",
+      "displayName": "Block 1M (2×2×2)",
+      "categoryId": "BLOCK_1M",
+      "size": { "x": 2, "y": 2, "z": 2 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/block/2m/cube/full",
+      "displayName": "Block 2M (4×4×4)",
+      "categoryId": "BLOCK_2M",
+      "size": { "x": 4, "y": 4, "z": 4 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/block/4m/cube/full",
+      "displayName": "Block 4M (8×8×8)",
+      "categoryId": "BLOCK_4M",
+      "size": { "x": 8, "y": 8, "z": 8 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+
+    {
+      "id": "base/terrain/1m/cube/full",
+      "displayName": "Terrain 1M (2×2×2)",
+      "categoryId": "TERRAIN_1M",
+      "size": { "x": 2, "y": 2, "z": 2 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/terrain/2m/cube/full",
+      "displayName": "Terrain 2M (4×4×4)",
+      "categoryId": "TERRAIN_2M",
+      "size": { "x": 4, "y": 4, "z": 4 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/terrain/4m/cube/full",
+      "displayName": "Terrain 4M (8×8×8)",
+      "categoryId": "TERRAIN_4M",
+      "size": { "x": 8, "y": 8, "z": 8 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+
+    {
+      "id": "base/wall/1m/panel/full",
+      "displayName": "Wand 1M (2 breit × 4 hoch × 1 dick)",
+      "categoryId": "WALL_1M",
+      "size": { "x": 2, "y": 4, "z": 1 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/wall/2m/panel/full",
+      "displayName": "Wand 2M (4 breit × 8 hoch × 1 dick)",
+      "categoryId": "WALL_2M",
+      "size": { "x": 4, "y": 8, "z": 1 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/wall/4m/panel/full",
+      "displayName": "Wand 4M breit (8 breit × 8 hoch × 1 dick)",
+      "categoryId": "WALL_4M",
+      "size": { "x": 8, "y": 8, "z": 1 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/wall/4m/panel/narrow",
+      "displayName": "Wand 4M schmal (4 breit × 8 hoch × 1 dick)",
+      "categoryId": "WALL_4M",
+      "size": { "x": 4, "y": 8, "z": 1 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+
+    {
+      "id": "base/floor/1m/tile/full",
+      "displayName": "Boden 1M (2×1×2)",
+      "categoryId": "FLOOR_1M",
+      "size": { "x": 2, "y": 1, "z": 2 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/floor/2m/tile/full",
+      "displayName": "Boden 2M (4×1×4)",
+      "categoryId": "FLOOR_2M",
+      "size": { "x": 4, "y": 1, "z": 4 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+    {
+      "id": "base/floor/4m/tile/full",
+      "displayName": "Boden 4M (8×1×8)",
+      "categoryId": "FLOOR_4M",
+      "size": { "x": 8, "y": 1, "z": 8 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" }
+    },
+
+    {
+      "id": "base/roof/2m/slope",
+      "displayName": "Dach Schräge 2M (Placeholder)",
+      "categoryId": "ROOF_2M",
+      "size": { "x": 4, "y": 4, "z": 4 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": true, "mirrorZ": false },
+      "mask": { "type": "filledBox" },
+      "placeholder": true
+    },
+    {
+      "id": "base/roof/4m/slope",
+      "displayName": "Dach Schräge 4M (Placeholder)",
+      "categoryId": "ROOF_4M",
+      "size": { "x": 8, "y": 8, "z": 8 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": true, "mirrorZ": false },
+      "mask": { "type": "filledBox" },
+      "placeholder": true
+    },
+    {
+      "id": "base/roof/2m/ridge",
+      "displayName": "Dach First 2M (Placeholder)",
+      "categoryId": "ROOF_2M",
+      "size": { "x": 4, "y": 4, "z": 4 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" },
+      "placeholder": true
+    },
+    {
+      "id": "base/roof/4m/ridge",
+      "displayName": "Dach First 4M (Placeholder)",
+      "categoryId": "ROOF_4M",
+      "size": { "x": 8, "y": 8, "z": 8 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0, 90, 180, 270], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" },
+      "placeholder": true
+    },
+
+    {
+      "id": "system/altar/flame/core",
+      "displayName": "Flammenaltar (Reserved Volume)",
+      "categoryId": "ALTAR",
+      "size": { "x": 8, "y": 8, "z": 8 },
+      "pivot": { "x": 0, "y": 0, "z": 0 },
+      "symmetry": { "rotY": [0], "mirrorX": false, "mirrorZ": false },
+      "mask": { "type": "filledBox" },
+      "reservedOnly": true
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+In diesen Ordner werden Snippet-Export/Import JSON Dateien standardmaessig gespeichert/geladen.

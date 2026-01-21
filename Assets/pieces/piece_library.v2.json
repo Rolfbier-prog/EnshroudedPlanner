@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 2,
+  "units": {
+    "voxelSizeMeters": 0.5
+  },
+  "categories": [
+    {
+      "id": "WALL_1M",
+      "displayName": "Wände 1M"
+    },
+    {
+      "id": "WALL_2M",
+      "displayName": "Wände 2M"
+    },
+    {
+      "id": "WALL_4M",
+      "displayName": "Wände 4M"
+    },
+    {
+      "id": "FLOOR_1M",
+      "displayName": "Böden 1M"
+    },
+    {
+      "id": "FLOOR_2M",
+      "displayName": "Böden 2M"
+    },
+    {
+      "id": "FLOOR_4M",
+      "displayName": "Böden 4M"
+    },
+    {
+      "id": "BLOCK_1M",
+      "displayName": "Blöcke 1M"
+    },
+    {
+      "id": "BLOCK_2M",
+      "displayName": "Blöcke 2M"
+    },
+    {
+      "id": "BLOCK_4M",
+      "displayName": "Blöcke 4M"
+    },
+    {
+      "id": "TERRAIN_1M",
+      "displayName": "Terrain 1M"
+    },
+    {
+      "id": "TERRAIN_2M",
+      "displayName": "Terrain 2M"
+    },
+    {
+      "id": "TERRAIN_4M",
+      "displayName": "Terrain 4M"
+    },
+    {
+      "id": "ROOF_2M",
+      "displayName": "Dächer 2M"
+    },
+    {
+      "id": "ROOF_4M",
+      "displayName": "Dächer 4M"
+    },
+    {
+      "id": "ALTAR",
+      "displayName": "Flammenaltar"
+    }
+  ],
+  "pieces": [
+    {
+	  "id": "debug/voxel/1x1x1",
+	  "displayName": "DEBUG Voxel (1×1×1)",
+	  "categoryId": "BLOCK_1M",
+	  "size": { "x": 1, "y": 1, "z": 1 }
+	},
+	{
+      "id": "base/block/1m/cube/full",
+      "displayName": "Block 1M (2×2×2)",
+      "categoryId": "BLOCK_1M",
+      "size": {
+        "x": 2,
+        "y": 2,
+        "z": 2
+      }
+    },
+    {
+      "id": "base/block/2m/cube/full",
+      "displayName": "Block 2M (4×4×4)",
+      "categoryId": "BLOCK_2M",
+      "size": {
+        "x": 4,
+        "y": 4,
+        "z": 4
+      }
+    },
+    {
+      "id": "base/block/4m/cube/full",
+      "displayName": "Block 4M (8×8×8)",
+      "categoryId": "BLOCK_4M",
+      "size": {
+        "x": 8,
+        "y": 8,
+        "z": 8
+      }
+    },
+    {
+      "id": "base/wall/1m/panel/full",
+      "displayName": "Wand 1M (2×1×8)",
+      "categoryId": "WALL_1M",
+      "size": {
+        "x": 2,
+        "y": 1,
+        "z": 8
+      }
+    },
+    {
+      "id": "base/wall/2m/panel/full",
+      "displayName": "Wand 2M (4×1×8)",
+      "categoryId": "WALL_2M",
+      "size": {
+        "x": 4,
+        "y": 1,
+        "z": 8
+      }
+    },
+    {
+      "id": "base/wall/4m/panel/full",
+      "displayName": "Wand 4M breit (8×1×8)",
+      "categoryId": "WALL_4M",
+      "size": {
+        "x": 8,
+        "y": 1,
+        "z": 8
+      }
+    },
+    {
+      "id": "base/floor/1m/tile/full",
+      "displayName": "Boden 1M (2×2×1)",
+      "categoryId": "FLOOR_1M",
+      "size": {
+        "x": 2,
+        "y": 2,
+        "z": 1
+      }
+    },
+    {
+      "id": "base/floor/2m/tile/full",
+      "displayName": "Boden 2M (4×4×1)",
+      "categoryId": "FLOOR_2M",
+      "size": {
+        "x": 4,
+        "y": 4,
+        "z": 1
+      }
+    },
+    {
+      "id": "base/floor/4m/tile/full",
+      "displayName": "Boden 4M (8×8×1)",
+      "categoryId": "FLOOR_4M",
+      "size": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      }
+    },
+    {
+      "id": "system/altar/flame/core",
+      "displayName": "Flammenaltar (Reserved Volume)",
+      "categoryId": "ALTAR",
+      "size": {
+        "x": 8,
+        "y": 8,
+        "z": 4
+      },
+      "reservedOnly": true
+    }
+  ]
+}

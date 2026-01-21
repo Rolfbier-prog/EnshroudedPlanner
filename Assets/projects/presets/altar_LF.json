@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1",
+  "units": { "voxelSizeMeters": 0.5 },
+  "buildZone": {
+    "mode": "FREE",
+    "sizeVoxels": { "x": 80, "y": 80, "z": 80 },
+    "origin": "CENTER",
+    "yMode": "GROUNDED",
+    "groundY": 0
+  },
+  "placedPieces": []
+}
+

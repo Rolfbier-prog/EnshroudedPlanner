@@ -1,0 +1,92 @@
+name: Release (Velopack)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PROJECT_PATH: EnshroudedPlanner/EnshroudedPlanner.csproj   # <--- anpassen
+  RID: win-x64
+  SELF_CONTAINED: "true"
+  PUBLISH_DIR: publish
+  RELEASES_DIR: Releases
+  CHANNEL: win
+  APP_ID: EnshroudedPlanner                      # <--- anpassen (muss zu deinem bestehenden Feed passen!)
+  MAIN_EXE: EnshroudedPlanner.exe                             # <--- anpassen (dein .exe Name)
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Determine Version
+        id: ver
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $version = "${{ github.ref_name }}".TrimStart("v")
+          } else {
+            $csproj = Get-Content "${{ env.PROJECT_PATH }}" -Raw
+            if ($csproj -match '<Version>([^<]+)</Version>') { $version = $Matches[1] }
+            else { throw "No <Version> in csproj and not running on a tag." }
+          }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Version = $version"
+
+      - name: Restore
+        run: dotnet restore "${{ env.PROJECT_PATH }}"
+
+      - name: Publish
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c Release -r ${{ env.RID }} --self-contained ${{ env.SELF_CONTAINED }} -o "${{ env.PUBLISH_DIR }}"
+
+      - name: Install vpk
+        shell: pwsh
+        run: |
+          dotnet tool install -g vpk
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Download previous release (for delta)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          vpk download github `
+            --repoUrl "https://github.com/${{ github.repository }}" `
+            --token "${{ secrets.GITHUB_TOKEN }}" `
+            --outputDir "${{ env.RELEASES_DIR }}" `
+            --channel "${{ env.CHANNEL }}"
+
+      - name: Pack (Velopack)
+        shell: pwsh
+        run: |
+          vpk pack `
+            --packId "${{ env.APP_ID }}" `
+            --packVersion "${{ steps.ver.outputs.version }}" `
+            --packDir "${{ env.PUBLISH_DIR }}" `
+            --mainExe "${{ env.MAIN_EXE }}" `
+            --outputDir "${{ env.RELEASES_DIR }}" `
+            --channel "${{ env.CHANNEL }}"
+
+      - name: Upload to GitHub Releases
+        shell: pwsh
+        run: |
+          vpk upload github `
+            --repoUrl "https://github.com/${{ github.repository }}" `
+            --token "${{ secrets.GITHUB_TOKEN }}" `
+            --outputDir "${{ env.RELEASES_DIR }}" `
+            --channel "${{ env.CHANNEL }}" `
+            --publish `
+            --releaseName "EnshroudedPlanner ${{ steps.ver.outputs.version }}" `
+            --tag "v${{ steps.ver.outputs.version }}"
