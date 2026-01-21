@@ -8,9 +8,9 @@
     <UseWPF>true</UseWPF>
 
     <!-- App-Version (für Titelzeile + Releases) -->
-    <Version>0.1.1</Version>
-    <AssemblyVersion>0.1.0.1</AssemblyVersion>
-    <FileVersion>0.1.0.1</FileVersion>
+    <Version>0.1.2</Version>
+	<AssemblyVersion>0.1.2.0</AssemblyVersion>
+	<FileVersion>0.1.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
