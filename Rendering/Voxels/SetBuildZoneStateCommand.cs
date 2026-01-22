@@ -17,7 +17,7 @@ public sealed class SetBuildZoneStateCommand : IEditorCommand
     private bool _oldAltarPlaced;
     private int _oldAltarBuildSizeVox;
     private Point3D _oldAltarCenter;
-    private Size3 _oldSizeVoxels;
+    private Size3 _oldSizeVoxels = null!;
 
     public SetBuildZoneStateCommand(
         MainWindow mw,

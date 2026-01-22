@@ -256,6 +256,22 @@ public partial class MainWindow : Window
         InitializeComponent();
         UpdateWindowTitleWithVersion();
 
+        // Optional: Update-Check beim Start (nur wenn installiert & Setting aktiv)
+        try
+        {
+            if (SettingsStore.Current.CheckForUpdatesOnStart)
+            {
+                Dispatcher.BeginInvoke(async () =>
+                {
+                    await _updateService.CheckAndPromptAsync(this, showUpToDateMessage: false);
+                }, DispatcherPriority.Background);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
         // Initialisierung + optionaler Startup-Load-Dialog
         Loaded += MainWindow_Loaded;
 
@@ -264,51 +280,19 @@ public partial class MainWindow : Window
         Closing += MainWindow_Closing;
     }
 
-    private static async Task CheckForUpdatesAsync()
+    private readonly UpdateService _updateService = new();
+
+
+    private async void OnCheckUpdatesClicked(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            // 1) Quelle: GitHub Releases
-            var source = new GithubSource(
-                repoUrl: "https://github.com/Rolfbier-prog/EnshroudedPlanner",
-                accessToken: "",     // optional (siehe Hinweis unten)
-                prerelease: false    // true = auch Pre-Releases
-            );
+        await _updateService.CheckAndPromptAsync(this, showUpToDateMessage: true);
+    }
 
-            // 2) UpdateManager
-            var mgr = new UpdateManager(source);
-
-            // Updates funktionieren nur sauber, wenn die App wirklich per Velopack installiert wurde
-            if (!mgr.IsInstalled)
-                return;
-
-            // 3) Prüfen
-            var update = await mgr.CheckForUpdatesAsync();
-            if (update == null)
-                return;
-
-            // 4) Fragen
-            var v = update.TargetFullRelease.Version;
-            var result = MessageBox.Show(
-                $"Update verfügbar ({v}). Jetzt installieren?",
-                "Update",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Information);
-
-            if (result != MessageBoxResult.Yes)
-                return;
-
-            // 5) Download (wichtig!)
-            await mgr.DownloadUpdatesAsync(update);
-
-            // 6) Anwenden + Neustart
-            mgr.ApplyUpdatesAndRestart(update.TargetFullRelease);
-        }
-        catch
-        {
-            // Update-Fehler sollen die App nicht abstürzen lassen
-            // Optional: Logging
-        }
+    private void OnSettingsClicked(object sender, RoutedEventArgs e)
+    {
+        var win = new SettingsWindow { Owner = this };
+        win.ShowDialog();
+        // Theme-Anwendung später möglich (SettingsStore.Current.Theme)
     }
 
     private bool _didInit = false;
@@ -322,7 +306,21 @@ public partial class MainWindow : Window
         UpdateWindowTitleWithVersion();
 
         // Update-Check nicht blockierend und nicht doppelt starten
-        Dispatcher.BeginInvoke(async () => await CheckForUpdatesAsync(), DispatcherPriority.Background);
+        try
+        {
+            if (SettingsStore.Current.CheckForUpdatesOnStart)
+            {
+                Dispatcher.BeginInvoke(async () =>
+                {
+                    await _updateService.CheckAndPromptAsync(this, showUpToDateMessage: false);
+                }, DispatcherPriority.Background);
+            }
+        }
+        catch
+        {
+            // Update-Fehler sollen die App nicht abstürzen lassen
+        }
+
 
         LoadLibrary();
         InitializeProject();
@@ -458,7 +456,26 @@ public partial class MainWindow : Window
             $"Origin: {_project.BuildZone.Origin}\n" +
             $"Voxel Size: {_project.Units.VoxelSizeMeters}m\n" +
             $"Z Anzeige (Höhe): -{HalfHeight} .. +{HalfHeight - 1} (UI)";
+
+        // Toolbar summary
+        RefreshProjectSummaryText();
     }
+
+    private void RefreshProjectSummaryText()
+    {
+        if (TxtProjectSummary == null || _project == null) return;
+
+        var size = _project.BuildZone.SizeVoxels;
+        int uiLayer = CurrentLayerZ - HalfHeight;
+
+        // Short text for the top bar. Full details remain in "Projekt-Details".
+        string mode = (_altarPlaced ? _project.BuildZone.Mode.ToString() : "SANDBOX");
+        TxtProjectSummary.Text = $"{mode} | Size {size.X}×{size.Y}×{size.Z} | Layer {uiLayer}";
+
+        if (ProjectInfo != null)
+            TxtProjectSummary.ToolTip = ProjectInfo.Text;
+    }
+
     // ======= Helpers =======
     private ViewType GetActiveViewType(HelixViewport3D? viewport = null)
     {
@@ -1456,13 +1473,7 @@ public partial class MainWindow : Window
         // ===============================
         // Project Info
         // ===============================
-        ProjectInfo.Text =
-            $"Mode: {_project.BuildZone.Mode}\n" +
-            $"Level: {_project.BuildZone.FlameAltarLevel}\n" +
-            $"Size Voxels: {_project.BuildZone.SizeVoxels.X} × {_project.BuildZone.SizeVoxels.Y} × {_project.BuildZone.SizeVoxels.Z}\n" +
-            $"Origin: {_project.BuildZone.Origin}\n" +
-            $"Voxel Size: {_project.Units.VoxelSizeMeters}m\n" +
-            $"Z Anzeige (Höhe): -{HalfHeight} .. +{HalfHeight - 1} (UI)";
+        RefreshProjectInfoText();
 
         SliderLayer.Minimum = 0;
         SliderLayer.Maximum = _project.BuildZone.SizeVoxels.Z - 1;
@@ -1513,6 +1524,9 @@ public partial class MainWindow : Window
         BtnLoadBlueprint.Click += (_, __) => LoadBlueprint();
         BtnExportBlueprint.Click += (_, __) => ExportSnippet();
         BtnImportBlueprint.Click += (_, __) => BeginImportSnippet();
+
+        BtnCheckUpdates.Click += OnCheckUpdatesClicked;
+        BtnSettings.Click += OnSettingsClicked;
 
 
         CheckShowGrid.Checked += (_, __) => RedrawAll();
@@ -2771,6 +2785,7 @@ private void SaveBlueprint() => TrySaveBlueprint(forceDialog: false);
         int ui = CurrentLayerZ - HalfHeight;
         TxtLayer.Text = ui.ToString();
         TxtLayerInfo.Text = $"(intern Z={CurrentLayerZ})";
+        RefreshProjectSummaryText();
     }
 
     // ======= Default Library =======

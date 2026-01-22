@@ -9,6 +9,7 @@
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -16,26 +17,48 @@
             <ColumnDefinition Width="320"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <!-- TOP BAR -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="6" Margin="0,0,0,10"
+                BorderBrush="#FFB0B0B0" BorderThickness="1" CornerRadius="6" Background="#FFF7F7F7">
+            <DockPanel LastChildFill="True">
+                <!-- Left: File actions -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button x:Name="BtnNewBlueprint" Content="🆕 Neu" Margin="2" Padding="10,4"/>
+                    <Button x:Name="BtnSaveBlueprint" Content="💾 Blueprint Speichern" Margin="2" Padding="10,4"/>
+                    <Button x:Name="BtnLoadBlueprint" Content="📂 Blueprint Laden" Margin="2" Padding="10,4"/>
+
+                    <Separator Width="10" Opacity="0"/>
+
+                    <Button x:Name="BtnExportBlueprint" Content="⤓ Snippet Export" Margin="2" Padding="10,4"/>
+                    <Button x:Name="BtnImportBlueprint" Content="➕ Snippet Import" Margin="2" Padding="10,4"/>
+                </StackPanel>
+
+                <!-- Right: Updates + Settings -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button x:Name="BtnCheckUpdates" Content="⟳ Nach Updates suchen…" Margin="2" Padding="10,4"
+                            ToolTip="Update-Check manuell starten"/>
+                    <Button x:Name="BtnSettings" Content="⚙" Margin="2" Padding="10,4"
+                            ToolTip="Einstellungen"/>
+                </StackPanel>
+                <!-- Center: Projekt-Kurzinfo -->
+                <TextBlock x:Name="TxtProjectSummary"
+                           Text=""
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+TextTrimming="CharacterEllipsis"
+                           ToolTipService.ShowDuration="60000"
+                           Margin="10,0"/>
+
+            </DockPanel>
+        </Border>
 
         <!-- LINKS: Auswahl -->
-        <DockPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+        <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
 
             <!-- TOP: Aktionen / Layer / Undo / Blueprint -->
             <Border DockPanel.Dock="Top" BorderBrush="#33000000" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
                 <StackPanel>
-                    <TextBlock FontSize="18" FontWeight="Bold" Text="Aktionen" />
-
-                    <UniformGrid Columns="3" Margin="0,6,0,0">
-                        <Button x:Name="BtnNewBlueprint" Content="🆕 Neu" Margin="2"/>
-                        <Button x:Name="BtnSaveBlueprint" Content="💾 Speichern" Margin="2"/>
-                        <Button x:Name="BtnLoadBlueprint" Content="📂 Laden" Margin="2"/>
-                    </UniformGrid>
-
-                    <UniformGrid Columns="2" Margin="0,6,0,0">
-                        <Button x:Name="BtnExportBlueprint" Content="⤓ Export" Margin="2"/>
-                        <Button x:Name="BtnImportBlueprint" Content="➕ Import" Margin="2"/>
-                    </UniformGrid>
-
                     <TextBlock FontWeight="SemiBold" Text="Undo / Redo (max 20)" Margin="0,10,0,0"/>
                     <UniformGrid Columns="2" Margin="0,6,0,0">
                         <Button x:Name="BtnUndo" Content="⟲ Undo" Margin="2"/>
@@ -69,12 +92,11 @@
 
             <!-- BOTTOM: Projektinfo -->
             <Border DockPanel.Dock="Bottom" BorderBrush="#33000000" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,8,0,0">
-                <StackPanel>
-                    <TextBlock FontSize="18" FontWeight="Bold" Text="Projekt" />
+                <Expander Header="Projekt-Details" IsExpanded="False">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="180">
                         <TextBlock x:Name="ProjectInfo" TextWrapping="Wrap" Margin="0,6,0,0"/>
                     </ScrollViewer>
-                </StackPanel>
+                </Expander>
             </Border>
 
             <!-- MIDDLE: Material + Element-Auswahl (separat scrollbar) -->
@@ -121,7 +143,7 @@
         </DockPanel>
 
         <!-- RECHTS: 4 Viewports -->
-        <Grid Grid.Row="0" Grid.Column="1">
+        <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
@@ -274,7 +296,7 @@
             </Border>
         </Grid>
         <!-- STATUS -->
-        <StatusBar Grid.Row="1" Grid.ColumnSpan="2" Margin="0,8,0,0">
+        <StatusBar Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0">
             <StatusBarItem>
                 <TextBlock x:Name="StatusTextBlock" Text="Bereit" />
             </StatusBarItem>
