@@ -24,13 +24,13 @@
                 <!-- Left: File actions -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <Button x:Name="BtnNewBlueprint" Content="🆕 Neu" Margin="2" Padding="10,4"/>
-                    <Button x:Name="BtnSaveBlueprint" Content="💾 Blueprint Speichern" Margin="2" Padding="10,4"/>
-                    <Button x:Name="BtnLoadBlueprint" Content="📂 Blueprint Laden" Margin="2" Padding="10,4"/>
+                    <Button x:Name="BtnSaveBlueprint" Content="💾 Bp Speichern" Margin="2" Padding="10,4"/>
+                    <Button x:Name="BtnLoadBlueprint" Content="📂 Bp Laden" Margin="2" Padding="10,4"/>
 
                     <Separator Width="10" Opacity="0"/>
 
-                    <Button x:Name="BtnExportBlueprint" Content="⤓ Snippet Export" Margin="2" Padding="10,4"/>
-                    <Button x:Name="BtnImportBlueprint" Content="➕ Snippet Import" Margin="2" Padding="10,4"/>
+                    <Button x:Name="BtnExportBlueprint" Content="⤓ Sn Export" Margin="2" Padding="10,4"/>
+                    <Button x:Name="BtnImportBlueprint" Content="➕ Sn Import" Margin="2" Padding="10,4"/>
                 </StackPanel>
 
                 <!-- Right: Updates + Settings -->
@@ -86,7 +86,7 @@ TextTrimming="CharacterEllipsis"
                     <Separator Margin="0,10,0,10"/>
 
                     <CheckBox x:Name="CheckShowGrid" Content="Grid anzeigen" IsChecked="True" FontWeight="SemiBold"/>
-                    <CheckBox x:Name="CheckShowCompass" Content="Kompass anzeigen" IsChecked="True" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    <CheckBox x:Name="CheckShowCompass" Content="Kompass anzeigen" IsChecked="False" FontWeight="SemiBold" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -163,8 +163,22 @@ TextTrimming="CharacterEllipsis"
 
                     <DockPanel Grid.Row="0" Margin="6">
                         <TextBlock x:Name="Title0" Text="Viewport A" FontWeight="Bold" DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <Button x:Name="BtnMax0" Content="⤢" Width="34" Height="26" DockPanel.Dock="Right" Margin="6,0,0,0"
-                                Click="BtnMax_Click" Tag="0"/>
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+                            <Button x:Name="BtnMax0"
+                                    Content="⤢"
+                                    Width="34" Height="26"
+                                    Margin="0,0,6,0"
+                                    Click="BtnMax_Click"
+                                    Tag="0"/>
+                            <Button x:Name="BtnReset0"
+                                    Content="⟳"
+                                    Width="34" Height="26"
+                                    Tag="0"
+                                    ToolTip="Ansicht zentrieren"
+                                    Click="BtnReset_Click"/>
+</StackPanel>
                         <ComboBox x:Name="ComboView0" Width="170" DockPanel.Dock="Right" Margin="6,0,0,0"
                                   SelectionChanged="ComboView_SelectionChanged" Tag="0">
                             <ComboBoxItem Content="Top" IsSelected="True"/>
@@ -183,9 +197,9 @@ TextTrimming="CharacterEllipsis"
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6">
-                            <TextBlock x:Name="LblA0" Text="X: E" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LblA0" Text="-W/E+" VerticalAlignment="Center"/>
                             <Slider x:Name="SliderA0" Width="180" Minimum="-40" Maximum="40" Value="0" Margin="6,0,10,0"/>
-                            <TextBlock x:Name="LblB0" Text="Y: N" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LblB0" Text="-N/S+" VerticalAlignment="Center"/>
                             <Slider x:Name="SliderB0" Width="180" Minimum="-40" Maximum="40" Value="0" Margin="6,0,0,0"/>
                         </StackPanel>
 
@@ -204,8 +218,22 @@ TextTrimming="CharacterEllipsis"
 
                     <DockPanel Grid.Row="0" Margin="6">
                         <TextBlock x:Name="Title1" Text="Viewport B" FontWeight="Bold" DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <Button x:Name="BtnMax1" Content="⤢" Width="34" Height="26" DockPanel.Dock="Right" Margin="6,0,0,0"
-                                Click="BtnMax_Click" Tag="1"/>
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+                            <Button x:Name="BtnMax1"
+                                    Content="⤢"
+                                    Width="34" Height="26"
+                                    Margin="0,0,6,0"
+                                    Click="BtnMax_Click"
+                                    Tag="1"/>
+                            <Button x:Name="BtnReset1"
+                                    Content="⟳"
+                                    Width="34" Height="26"
+                                    Tag="1"
+                                    ToolTip="Ansicht zentrieren"
+                                    Click="BtnReset_Click"/>
+                        </StackPanel>
                         <ComboBox x:Name="ComboView1" Width="170" DockPanel.Dock="Right" Margin="6,0,0,0"
                                   SelectionChanged="ComboView_SelectionChanged" Tag="1">
                             <ComboBoxItem Content="Front" IsSelected="True"/>
@@ -224,9 +252,9 @@ TextTrimming="CharacterEllipsis"
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6">
-                            <TextBlock x:Name="LblA1" Text="X: E" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LblA1" Text="-W/E+" VerticalAlignment="Center"/>
                             <Slider x:Name="SliderA1" Width="180" Minimum="-40" Maximum="40" Value="0" Margin="6,0,10,0"/>
-                            <TextBlock x:Name="LblB1" Text="Z: U" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LblB1" Text="-T/B+" VerticalAlignment="Center"/>
                             <Slider x:Name="SliderB1" Width="180" Minimum="-40" Maximum="40" Value="0" Margin="6,0,0,0"/>
                         </StackPanel>
 
@@ -245,8 +273,22 @@ TextTrimming="CharacterEllipsis"
 
                     <DockPanel Grid.Row="0" Margin="6">
                         <TextBlock x:Name="Title2" Text="Viewport C" FontWeight="Bold" DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <Button x:Name="BtnMax2" Content="⤢" Width="34" Height="26" DockPanel.Dock="Right" Margin="6,0,0,0"
-                                Click="BtnMax_Click" Tag="2"/>
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+                            <Button x:Name="BtnMax2"
+                                    Content="⤢"
+                                    Width="34" Height="26"
+                                    Margin="0,0,6,0"
+                                    Click="BtnMax_Click"
+                                    Tag="2"/>
+                            <Button x:Name="BtnReset2"
+                                    Content="⟳"
+                                    Width="34" Height="26"
+                                    Tag="2"
+                                    ToolTip="Ansicht zentrieren"
+                                    Click="BtnReset_Click"/>
+                        </StackPanel>
                         <ComboBox x:Name="ComboView2" Width="170" DockPanel.Dock="Right" Margin="6,0,0,0"
                                   SelectionChanged="ComboView_SelectionChanged" Tag="2">
                             <ComboBoxItem Content="Left" IsSelected="True"/>
@@ -265,9 +307,9 @@ TextTrimming="CharacterEllipsis"
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="6">
-                            <TextBlock x:Name="LblA2" Text="Y: N" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LblA2" Text="-N/S+" VerticalAlignment="Center"/>
                             <Slider x:Name="SliderA2" Width="180" Minimum="-40" Maximum="40" Value="0" Margin="6,0,10,0"/>
-                            <TextBlock x:Name="LblB2" Text="Z: U" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LblB2" Text="-T/B+" VerticalAlignment="Center"/>
                             <Slider x:Name="SliderB2" Width="180" Minimum="-40" Maximum="40" Value="0" Margin="6,0,0,0"/>
                         </StackPanel>
 
@@ -284,16 +326,36 @@ TextTrimming="CharacterEllipsis"
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <DockPanel Grid.Row="0" Margin="6">
-                        <TextBlock x:Name="Title3" Text="Viewport D (3D frei)" FontWeight="Bold" DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <Button x:Name="BtnMax3" Content="⤢" Width="34" Height="26" DockPanel.Dock="Right" Margin="6,0,0,0"
-                                Click="BtnMax_Click" Tag="3"/>
-                        <TextBlock Text="(fix)" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                    <DockPanel Grid.Row="0" Margin="6" LastChildFill="True">
+                        <TextBlock x:Name="Title3"
+                       Text="Viewport D (3D frei)"
+                       FontWeight="Bold"
+                       DockPanel.Dock="Left"
+                       VerticalAlignment="Center"/>
+
+                        <!-- rechts: Buttons sauber gruppiert -->
+                        <StackPanel DockPanel.Dock="Right"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                            <Button x:Name="BtnMax3"
+                        Content="⤢"
+                        Width="34" Height="26"
+                        Margin="0,0,6,0"
+                        Click="BtnMax_Click"
+                        Tag="3"/>
+                            <Button x:Name="BtnReset3"
+                        Content="⟳"
+                        Width="34" Height="26"
+                        Tag="3"
+                        ToolTip="Ansicht zentrieren"
+                        Click="BtnReset_Click"/>
+                        </StackPanel>
                     </DockPanel>
 
                     <helix:HelixViewport3D x:Name="View3" Grid.Row="1" Background="#FFF0F0F0"/>
                 </Grid>
             </Border>
+
         </Grid>
         <!-- STATUS -->
         <StatusBar Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0">

@@ -244,6 +244,10 @@ public partial class MainWindow : Window
     private double _offA1, _offB1; // View1 X/Z
     private double _offA2, _offB2; // View2 Y/Z
 
+    // Viewport D (3D) Default-Pan (R/F) – kannst du hier ändern (Startwerte)
+    private double _view3PanRight = -60;   // "R" (Right) – seitlich schieben
+    private double _view3PanForward = 60; // "F" (Forward) – vor/zurück schieben
+
     public ProjectData Project => _project;
     public Dictionary<(int X, int Y, int Z), MaterialId> PaintVoxels => _paintVoxels;
     public Point3D AltarCenter => _altarCenter;
@@ -597,6 +601,32 @@ public partial class MainWindow : Window
             SetMaximized(idx);
     }
 
+    private void BtnReset_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn)
+            return;
+
+        if (!int.TryParse(btn.Tag?.ToString(), out int idx))
+            return;
+
+        switch (idx)
+        {
+            case 0:
+                SetupOrthographicView(View0, _viewportTypes[0]);
+                break;
+            case 1:
+                SetupOrthographicView(View1, _viewportTypes[1]);
+                break;
+            case 2:
+                SetupOrthographicView(View2, _viewportTypes[2]);
+                break;
+            case 3:
+                ResetViewport3D();
+                break;
+        }
+    }
+
+
     /// <summary>
     /// Mouse Picking (HelixToolkit.Wpf 3.1.2)
     /// Szene ist per _worldTransform gedreht:
@@ -669,6 +699,7 @@ public partial class MainWindow : Window
         Title2.Text = $"Viewport C ({ViewTypeToTitle(_viewportTypes[2])})";
 
         Setup3DView(View3);
+        ResetViewport3D();
         Title3.Text = "Viewport D (3D frei)";
 
         // Events: doppelte Registrierung verhindern
@@ -711,9 +742,80 @@ public partial class MainWindow : Window
         View3.MouseLeave += (_, __) => { _mouseOverViewport = false; _currentViewportIndex = -1; _hoverPiece = null; _hoverPieceDef = null; _hoverVoxelKey = null; RedrawAll(); };
     }
 
-    private void SetupOrthographicView(HelixViewport3D viewport, ViewType type)
+    // Viewport D (3D) wieder auf Standard: Zentrum der Zone, Blickrichtung W-N (schräg) + leicht von oben
+    private void ResetViewport3D()
+    {
+        if (View3 == null)
+            return;
+
+        // Zentrum (immer Zone-Mitte)
+        GetBuildBounds(out double minX, out double maxX, out double minY, out double maxY);
+        double cx = (minX + maxX) * 0.5;
+        double cy = (minY + maxY) * 0.5;
+        double cz = HalfHeight; // UI-0 liegt bei HalfHeight (intern)
+
+        // Distanz abhängig von Größe (etwas näher)
+        double sizeX = Math.Max(1.0, maxX - minX);
+        double sizeY = Math.Max(1.0, maxY - minY);
+        double radius = Math.Max(sizeX, sizeY) * 0.5;
+        double dist = Math.Max(35.0, radius * 1.7);
+        double height = dist * 0.65;
+
+        // Kamera-Position: SE -> Blick nach W-N (gegenüber von E-S)
+        var pos = new Point3D(cx + dist, cy - dist, cz + height);
+        var target = new Point3D(cx, cy, cz);
+        var look = target - pos;
+
+        var cam = new PerspectiveCamera
+        {
+            Position = pos,
+            LookDirection = new Vector3D(look.X, look.Y, look.Z),
+            UpDirection = new Vector3D(0, 0, 1),
+            FieldOfView = 45
+        };
+
+        // Default-Framing-Offset (ohne Rotation): verschiebt Kamera + Ziel gemeinsam
+        // (LookDirection bleibt gleich, dadurch wandert das "LookAt" mit).
+        try
+        {
+            // Kamera-Basis (Right/Forward) aus aktueller Ansicht ableiten
+            var lookN = cam.LookDirection;
+            if (lookN.LengthSquared > 1e-9) lookN.Normalize();
+
+            var upN = cam.UpDirection;
+            if (upN.LengthSquared < 1e-9) upN = new Vector3D(0, 0, 1);
+            upN.Normalize();
+
+            var right = Vector3D.CrossProduct(lookN, upN);
+            if (right.LengthSquared > 1e-9) right.Normalize();
+
+            var forward = Vector3D.CrossProduct(upN, right);
+            if (forward.LengthSquared > 1e-9) forward.Normalize();
+
+            // Default-Framing-Offset: R/F (wie früher "R:.. F:..")
+            var delta = (right * _view3PanRight) + (forward * _view3PanForward);
+
+            // Pan: Position verschieben, LookDirection unverändert lassen
+            cam.Position = cam.Position + delta;
+        }
+        catch
+
+        {
+            // ignorieren
+        }
+
+        View3.Camera = cam;
+    }
+
+    private void SetupOrthographicView(HelixViewport3D viewport, ViewType type, bool preserveZoom = false)
     {
         if (viewport is null) return;
+
+        // If the user zoomed in/out, Helix changes OrthographicCamera.Width.
+        // When sliders change, we want to keep the current zoom instead of snapping back.
+        double? oldWidth = null;
+        if (preserveZoom && viewport.Camera is OrthographicCamera oldOrtho)
+            oldWidth = oldOrtho.Width;
 
         double dist = 200;
 
@@ -785,13 +887,19 @@ public partial class MainWindow : Window
         viewport.ShowViewCube = false;
         viewport.IsHeadLightEnabled = true;
 
-        viewport.Camera = new OrthographicCamera
+        var cam = new OrthographicCamera
         {
             Position = posScene,
             LookDirection = lookScene,
             UpDirection = upScene,
             Width = width
         };
+
+        // Keep zoom level when slider offsets change
+        if (oldWidth.HasValue)
+            cam.Width = oldWidth.Value;
+
+        viewport.Camera = cam;
     }
 
     private static void Setup3DView(HelixViewport3D viewport)
@@ -1461,14 +1569,14 @@ public partial class MainWindow : Window
         // ===============================
         // Slider Offsets (FIX: funktioniert)
         // ===============================
-        SliderA0.ValueChanged += (_, __) => { _offA0 = SliderA0.Value; SetupOrthographicView(View0, _viewportTypes[0]); };
-        SliderB0.ValueChanged += (_, __) => { _offB0 = SliderB0.Value; SetupOrthographicView(View0, _viewportTypes[0]); };
+        SliderA0.ValueChanged += (_, __) => { _offA0 = SliderA0.Value; SetupOrthographicView(View0, _viewportTypes[0], preserveZoom: true); };
+        SliderB0.ValueChanged += (_, __) => { _offB0 = SliderB0.Value; SetupOrthographicView(View0, _viewportTypes[0], preserveZoom: true); };
 
-        SliderA1.ValueChanged += (_, __) => { _offA1 = SliderA1.Value; SetupOrthographicView(View1, _viewportTypes[1]); };
-        SliderB1.ValueChanged += (_, __) => { _offB1 = SliderB1.Value; SetupOrthographicView(View1, _viewportTypes[1]); };
+        SliderA1.ValueChanged += (_, __) => { _offA1 = SliderA1.Value; SetupOrthographicView(View1, _viewportTypes[1], preserveZoom: true); };
+        SliderB1.ValueChanged += (_, __) => { _offB1 = SliderB1.Value; SetupOrthographicView(View1, _viewportTypes[1], preserveZoom: true); };
 
-        SliderA2.ValueChanged += (_, __) => { _offA2 = SliderA2.Value; SetupOrthographicView(View2, _viewportTypes[2]); };
-        SliderB2.ValueChanged += (_, __) => { _offB2 = SliderB2.Value; SetupOrthographicView(View2, _viewportTypes[2]); };
+        SliderA2.ValueChanged += (_, __) => { _offA2 = SliderA2.Value; SetupOrthographicView(View2, _viewportTypes[2], preserveZoom: true); };
+        SliderB2.ValueChanged += (_, __) => { _offB2 = SliderB2.Value; SetupOrthographicView(View2, _viewportTypes[2], preserveZoom: true); };
 
         // ===============================
         // Project Info
@@ -2014,28 +2122,6 @@ public partial class MainWindow : Window
 
         foreach (var (text, pos) in labels)
         {
-            root.Children.Add(new LinesVisual3D
-            {
-                Points = new Point3DCollection
-                {
-                    new Point3D(pos.X - 1, pos.Y, pos.Z),
-                    new Point3D(pos.X + 1, pos.Y, pos.Z)
-                },
-                Color = Colors.Black,
-                Thickness = 2
-            });
-
-            root.Children.Add(new LinesVisual3D
-            {
-                Points = new Point3DCollection
-                {
-                    new Point3D(pos.X, pos.Y - 1, pos.Z),
-                    new Point3D(pos.X, pos.Y + 1, pos.Z)
-                },
-                Color = Colors.Black,
-                Thickness = 2
-            });
-
             root.Children.Add(new BillboardTextVisual3D
             {
                 Text = text,
@@ -2195,7 +2281,7 @@ public partial class MainWindow : Window
             _ => (piece.Size.X, piece.Size.Y, piece.Size.Z)
         };
     }
-    
+
 
 
     // ======= Undo/Redo =======
@@ -2264,7 +2350,7 @@ public partial class MainWindow : Window
         }
     }
 
-    
+
     // ======= Status + Folders =======
     private DispatcherTimer? _statusTimer;
 
@@ -2291,7 +2377,7 @@ public partial class MainWindow : Window
         return AppContext.BaseDirectory;
     }
 
-private void EnsureDataFolders()
+    private void EnsureDataFolders()
     {
         try
         {
@@ -2342,7 +2428,7 @@ private void EnsureDataFolders()
 
     private void MarkDirty() => SetDirty(true);
 
-private void SaveBlueprint() => TrySaveBlueprint(forceDialog: false);
+    private void SaveBlueprint() => TrySaveBlueprint(forceDialog: false);
 
     private void SaveBlueprintAs() => TrySaveBlueprint(forceDialog: true);
 

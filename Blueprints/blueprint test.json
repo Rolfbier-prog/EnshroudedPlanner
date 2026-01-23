@@ -1,0 +1,124 @@
+{
+  "SchemaVersion": 2,
+  "BuildZone": {
+    "Mode": "FLAME_ALTAR",
+    "FlameAltarLevel": 1,
+    "SizeVoxels": {
+      "X": 80,
+      "Y": 80,
+      "Z": 80
+    },
+    "Origin": "CRITER"
+  },
+  "Units": {
+    "VoxelSizeMeters": 0.5
+  },
+  "PlacedPieces": [
+    {
+      "PieceId": "base/wall/1m/panel/full",
+      "Pos": "38,40,40",
+      "RotY": 90,
+      "Material": 0
+    }
+  ],
+  "Voxels": [
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 40,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 40,
+      "Material": 0
+    },
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 41,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 41,
+      "Material": 0
+    },
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 42,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 42,
+      "Material": 0
+    },
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 43,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 43,
+      "Material": 0
+    },
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 44,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 44,
+      "Material": 0
+    },
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 45,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 45,
+      "Material": 0
+    },
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 46,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 46,
+      "Material": 0
+    },
+    {
+      "X": 38,
+      "Y": 40,
+      "Z": 47,
+      "Material": 0
+    },
+    {
+      "X": 39,
+      "Y": 40,
+      "Z": 47,
+      "Material": 0
+    }
+  ],
+  "AltarPlaced": false,
+  "AltarBuildSizeVox": 0
+}
