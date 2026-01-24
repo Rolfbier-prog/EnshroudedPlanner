@@ -1204,33 +1204,119 @@ public partial class MainWindow : Window
         return false;
     }
 
-    private void DrawHoverHighlight(ModelVisual3D root)
+    private const int HoverFloodLimit = 6000;
+
+    private void DrawHoverHighlight(ModelVisual3D root, Color color)
     {
-        // 1) Voxel highlight (immer 1x1)
+        // 1) PaintVoxel-Element (Connected Component) highlight
         if (_hoverVoxelKey.HasValue)
         {
-            var (x, y, z) = _hoverVoxelKey.Value;
-            double zz = z + 1.2; // oben auf dem Voxel, deutlich über Grid/Piece
+            var key = _hoverVoxelKey.Value;
 
-            DrawRectOutline(root, x, y, 1, 1, zz, Colors.Red);
+            // Versuche, das "Element" (zusammenhängende Voxels gleicher MaterialId) zu finden
+            if (TryGetPaintVoxelElementBounds(key, out int ex, out int ey, out int ez, out int ew, out int el, out int eh))
+            {
+                // leicht anheben gegen Z-Fighting
+                DrawWireBox(root, ex + GridOffset, ey + GridOffset, ez + 0.02, ew, el, eh, color);
+            }
+            else
+            {
+                // Fallback: 1x1x1
+                DrawWireBox(root, key.X + GridOffset, key.Y + GridOffset, key.Z + 0.02, 1, 1, 1, color);
+            }
             return;
         }
 
-        // 2) Piece highlight (Footprint)
+        // 2) Piece highlight (volle AABB)
         if (_hoverPiece != null && _hoverPieceDef != null)
         {
             var pp = _hoverPiece;
             var piece = _hoverPieceDef;
 
-            // Größe des Pieces (so wie es platziert wurde)
             var (w, l, h0) = GetVoxelAlignedSize(piece, ToGridRotY(piece, pp.RotY));
 
             int px = (int)pp.Pos.X;
             int py = (int)pp.Pos.Y;
+            double pz = pp.Pos.Z;
 
-            double zz = pp.Pos.Z + h0 + 0.2; // über der Oberkante, kein Z-Fighting
+            DrawWireBox(root, px + GridOffset, py + GridOffset, pz + 0.02, w, l, h0, color);
+        }
+    }
 
-            DrawRectOutline(root, px, py, w, l, zz, Colors.Red);
+    /// <summary>
+    /// Ermittelt für einen Hover-Voxel das zusammenhängende "Element" (6-Nachbarn) gleicher MaterialId
+    /// und gibt dessen axis-aligned Bounds in Voxeln zurück.
+    /// </summary>
+    private bool TryGetPaintVoxelElementBounds((int X, int Y, int Z) start,
+        out int x, out int y, out int z, out int w, out int l, out int h)
+    {
+        x = y = z = w = l = h = 0;
+
+        if (!_paintVoxels.TryGetValue(start, out MaterialId mat))
+            return false;
+
+        int minX = start.X, maxX = start.X;
+        int minY = start.Y, maxY = start.Y;
+        int minZ = start.Z, maxZ = start.Z;
+
+        // Flood-Fill mit Limit (damit große Terrain-Flächen nicht ruckeln)
+        var q = new Queue<(int X, int Y, int Z)>();
+        var visited = new HashSet<long>();
+
+        long Pack(int xx, int yy, int zz)
+            => (((long)xx & 0x1FFFFF) << 42) | (((long)yy & 0x1FFFFF) << 21) | ((long)zz & 0x1FFFFF);
+
+        q.Enqueue(start);
+        visited.Add(Pack(start.X, start.Y, start.Z));
+
+        int processed = 0;
+
+        while (q.Count > 0)
+        {
+            var v = q.Dequeue();
+            processed++;
+            if (processed > HoverFloodLimit)
+            {
+                // Fallback: nur Startvoxel (schnell & deterministisch)
+                x = start.X; y = start.Y; z = start.Z;
+                w = 1; l = 1; h = 1;
+                return true;
+            }
+
+            if (v.X < minX) minX = v.X;
+            if (v.X > maxX) maxX = v.X;
+            if (v.Y < minY) minY = v.Y;
+            if (v.Y > maxY) maxY = v.Y;
+            if (v.Z < minZ) minZ = v.Z;
+            if (v.Z > maxZ) maxZ = v.Z;
+
+            // 6-Neighborhood
+            TryEnqueue(v.X + 1, v.Y, v.Z);
+            TryEnqueue(v.X - 1, v.Y, v.Z);
+            TryEnqueue(v.X, v.Y + 1, v.Z);
+            TryEnqueue(v.X, v.Y - 1, v.Z);
+            TryEnqueue(v.X, v.Y, v.Z + 1);
+            TryEnqueue(v.X, v.Y, v.Z - 1);
+        }
+
+        x = minX;
+        y = minY;
+        z = minZ;
+        w = (maxX - minX) + 1;
+        l = (maxY - minY) + 1;
+        h = (maxZ - minZ) + 1;
+        return true;
+
+        void TryEnqueue(int nx, int ny, int nz)
+        {
+            long p = Pack(nx, ny, nz);
+            if (visited.Contains(p)) return;
+
+            if (_paintVoxels.TryGetValue((nx, ny, nz), out MaterialId m) && m == mat)
+            {
+                visited.Add(p);
+                q.Enqueue((nx, ny, nz));
+            }
         }
     }
 
@@ -1789,18 +1875,48 @@ public partial class MainWindow : Window
             return;
         }
 
-        var list = _library.Pieces
-            .Where(p => uiCat.MatchCategoryId(p.CategoryId))
-            .OrderBy(p => p.DisplayName)
-            .ToList();
+        List<Piece> list;
+
+        // Flammenaltar / Freebuild sind "virtuelle" Palette-Einträge (keine echten Library-Pieces)
+        if (uiCat.Id == "ALTAR")
+        {
+            list = BuildAltarPalette();
+        }
+        else
+        {
+            list = _library.Pieces
+                .Where(p => uiCat.MatchCategoryId(p.CategoryId))
+                .OrderBy(p => p.DisplayName)
+                .ToList();
+        }
 
         PieceList.DisplayMemberPath = "DisplayName";
         PieceList.ItemsSource = list;
     }
 
+    private static List<Piece> BuildAltarPalette()
+    {
+        // Enshrouded: 1=40m(80 Vox), 2=80m(160 Vox), 3=120m(240 Vox), 4=160m(320 Vox)
+        // Freebuild: wie Stufe 4 (ohne Altar)
+        var altarFootprint = new Size3 { X = 8, Y = 8, Z = 4 };
+
+        return new List<Piece>
+        {
+            new Piece { Id = "__ALTAR__80",  DisplayName = "Flammenaltar Stufe 1 (40m / 80 Vox)",   CategoryId = "ALTAR", Size = altarFootprint },
+            new Piece { Id = "__ALTAR__160", DisplayName = "Flammenaltar Stufe 2 (80m / 160 Vox)",  CategoryId = "ALTAR", Size = altarFootprint },
+            new Piece { Id = "__ALTAR__240", DisplayName = "Flammenaltar Stufe 3 (120m / 240 Vox)", CategoryId = "ALTAR", Size = altarFootprint },
+            new Piece { Id = "__ALTAR__320", DisplayName = "Flammenaltar Stufe 4 (160m / 320 Vox)", CategoryId = "ALTAR", Size = altarFootprint },
+
+            // Ohne Altar: Sandbox/Freebuild (visuell/Bounds 320×320; tatsächlich clamped wird nichts)
+            new Piece { Id = "__ALTAR__NONE", DisplayName = "Freebuild (ohne Altar) (160m / 320 Vox)", CategoryId = "ALTAR", Size = new Size3 { X = 1, Y = 1, Z = 1 } },
+        };
+    }
+
     // ======= Rendering =======
     private void RedrawAll()
     {
+
+        UpdateHoverTargets();
         DrawViewport(View0, _viewportTypes[0]);
         DrawViewport(View1, _viewportTypes[1]);
         DrawViewport(View2, _viewportTypes[2]);
@@ -1913,6 +2029,14 @@ public partial class MainWindow : Window
                 root.Children.Add(new ModelVisual3D { Content = BuildGhostVoxelSetModel(ghostKeys, ghostBrush) });
             }
         }
+
+        // Hover-Highlight (nicht im Remove-Mode, damit es nicht mit dem Remove-Brush verwechselt wird)
+        if (_mouseOverViewport && !_removeMode)
+        {
+            // Farbe: Piece-Placement vs. Material-Paint (inkl. NoMaterialBlue)
+            var hoverColor = (_selectedPiece != null) ? Colors.DeepSkyBlue : Colors.LimeGreen;
+            DrawHoverHighlight(root, hoverColor);
+        }
     }
 
 
@@ -1969,14 +2093,51 @@ public partial class MainWindow : Window
 
     private void DrawAltarAt(ModelVisual3D root, Point3D pos)
     {
+        // Freebuild / Sandbox ohne Altar (Preview: fixe 320×320-Zone)
+        if (_selectedPiece != null && _selectedPiece.Id.Equals("__ALTAR__NONE", StringComparison.Ordinal))
+        {
+            // nur eine Vorschau der Sandbox-Grenzen (kein Altar-Block)
+            DrawWireBox(root,
+                0 + GridOffset, 0 + GridOffset,
+                HalfHeight + 0.03,
+                320, 320, 0.1,
+                Colors.DeepSkyBlue);
+            return;
+        }
+
+        // Normale Altäre: Altar-Footprint + Vorschau der Build-Zone (Stufe 1–4)
+        int buildSize = 0;
+        if (_selectedPiece != null &&
+            int.TryParse(_selectedPiece.Id.Replace("__ALTAR__", "", StringComparison.Ordinal), out int bs))
+        {
+            buildSize = bs;
+        }
+
+        var center = new Point3D(pos.X + 4, pos.Y + 4, HalfHeight);
+
+        // Altar selbst (8×8×4)
         root.Children.Add(new BoxVisual3D
         {
             Width = 8,
             Length = 8,
             Height = 4,
-            Center = new Point3D(pos.X + 4, pos.Y + 4, HalfHeight),
+            Center = center,
             Fill = new SolidColorBrush(Color.FromArgb(120, 80, 180, 80))
         });
+
+        // Build-Zone Preview (nur wenn Stufe bekannt)
+        if (buildSize > 0)
+        {
+            double half = buildSize / 2.0;
+            double minX = center.X - half;
+            double minY = center.Y - half;
+
+            DrawWireBox(root,
+                minX + GridOffset, minY + GridOffset,
+                HalfHeight + 0.03,
+                buildSize, buildSize, 0.1,
+                Colors.LimeGreen);
+        }
     }
 
     private void DrawGroundPlane(ModelVisual3D root)
@@ -2010,15 +2171,39 @@ public partial class MainWindow : Window
 
     private void DrawGrid(ModelVisual3D root)
     {
-
         int sizeX = _project.BuildZone.SizeVoxels.X;
         int sizeY = _project.BuildZone.SizeVoxels.Y;
         int layerZ = CurrentLayerZ;
 
-        double altarMinX = _altarPlaced ? (_altarCenter.X - 4.0) : 0.0;
-        double altarMinY = _altarPlaced ? (_altarCenter.Y - 4.0) : 0.0;
-
         GetBuildBounds(out double minX, out double maxX, out double minY, out double maxY);
+
+        // Grid-Regel (Roadmap v4):
+        // - Fine-Lines (1er Raster) über das gesamte Grid
+        // - Major-Lines (8er Raster) über das gesamte Grid
+        // - Das "Zentrum" soll NICHT auf einem Major-Line-Kreuz liegen:
+        //   Der mittlere 8x8 Bereich ist Fine (Major liegt auf den 8x8-Rändern, nicht durchs Zentrum).
+        //
+        // Hinweis für später (Flammenaltäre):
+        // _altarBuildSizeVox wird extern gesetzt (z.B. 80/160/240/320), GetBuildBounds() nutzt das automatisch.
+
+        // Fokus-Zentrum: um Altar (wenn vorhanden) sonst Mitte der BuildBounds, auf Ganzzahlen gesnappt.
+        double centerX;
+        double centerY;
+
+        if (_altarPlaced)
+        {
+            centerX = Math.Floor(_altarCenter.X);
+            centerY = Math.Floor(_altarCenter.Y);
+        }
+        else
+        {
+            centerX = Math.Floor((minX + maxX) * 0.5);
+            centerY = Math.Floor((minY + maxY) * 0.5);
+        }
+
+        // Major-Anker liegt 4 Voxels vom Zentrum -> Zentrum liegt in einem 8x8-Fine-Feld zwischen Major-Lines.
+        double majorAnchorX = centerX - 4.0;
+        double majorAnchorY = centerY - 4.0;
 
         bool cacheValid =
             _cachedMinorPoints != null &&
@@ -2026,8 +2211,8 @@ public partial class MainWindow : Window
             _cachedGridSizeX == sizeX &&
             _cachedGridSizeY == sizeY &&
             _cachedGridLayerZ == layerZ &&
-            Math.Abs(_cachedAltarMinX - altarMinX) < 0.0001 &&
-            Math.Abs(_cachedAltarMinY - altarMinY) < 0.0001 &&
+            Math.Abs(_cachedAltarMinX - majorAnchorX) < 0.0001 &&
+            Math.Abs(_cachedAltarMinY - majorAnchorY) < 0.0001 &&
             Math.Abs(_cachedMinX - minX) < 0.0001 &&
             Math.Abs(_cachedMinY - minY) < 0.0001 &&
             Math.Abs(_cachedMaxX - maxX) < 0.0001 &&
@@ -2039,8 +2224,9 @@ public partial class MainWindow : Window
             _cachedGridSizeY = sizeY;
             _cachedGridLayerZ = layerZ;
 
-            _cachedAltarMinX = altarMinX;
-            _cachedAltarMinY = altarMinY;
+            // Reuse cache fields (historically "altarMin") as the major-anchor origin
+            _cachedAltarMinX = majorAnchorX;
+            _cachedAltarMinY = majorAnchorY;
 
             _cachedMinX = minX;
             _cachedMinY = minY;
@@ -2052,32 +2238,48 @@ public partial class MainWindow : Window
             var minorPts = new Point3DCollection();
             var majorPts = new Point3DCollection();
 
-            void AddVertical(Point3DCollection pts, double x)
+            void AddVerticalSeg(Point3DCollection pts, double x, double y0, double y1)
             {
                 double xx = x + GridOffset;
-                pts.Add(new Point3D(xx, minY, z));
-                pts.Add(new Point3D(xx, maxY, z));
+                pts.Add(new Point3D(xx, y0, z));
+                pts.Add(new Point3D(xx, y1, z));
             }
 
-            void AddHorizontal(Point3DCollection pts, double y)
+            void AddHorizontalSeg(Point3DCollection pts, double y, double x0, double x1)
             {
                 double yy = y + GridOffset;
-                pts.Add(new Point3D(minX, yy, z));
-                pts.Add(new Point3D(maxX, yy, z));
+                pts.Add(new Point3D(x0, yy, z));
+                pts.Add(new Point3D(x1, yy, z));
             }
 
-            // Edge-Grid (Voxel-Kanten) auf Ganzzahlen
-            for (int x = (int)Math.Ceiling(minX); x <= (int)Math.Floor(maxX); x++)
-                AddVertical(minorPts, x);
+            // ---- Fine-Lines (1er Raster) über das gesamte Grid ----
+            int x0i = (int)Math.Ceiling(minX);
+            int x1i = (int)Math.Floor(maxX);
+            int y0i = (int)Math.Ceiling(minY);
+            int y1i = (int)Math.Floor(maxY);
 
-            for (int y = (int)Math.Ceiling(minY); y <= (int)Math.Floor(maxY); y++)
-                AddHorizontal(minorPts, y);
+            for (int x = x0i; x <= x1i; x++)
+                AddVerticalSeg(minorPts, x, minY, maxY);
 
-            for (double x = altarMinX; x >= minX; x -= 8.0) AddVertical(majorPts, x);
-            for (double x = altarMinX + 8.0; x <= maxX; x += 8.0) AddVertical(majorPts, x);
+            for (int y = y0i; y <= y1i; y++)
+                AddHorizontalSeg(minorPts, y, minX, maxX);
 
-            for (double y = altarMinY; y >= minY; y -= 8.0) AddHorizontal(majorPts, y);
-            for (double y = altarMinY + 8.0; y <= maxY; y += 8.0) AddHorizontal(majorPts, y);
+            // ---- Major-Lines (8er Raster) über das gesamte Grid ----
+            const double step = 8.0;
+            const double eps = 0.0001;
+
+            // erste Major-Line <= minX, aligned an majorAnchorX
+            double firstMajorX = majorAnchorX + Math.Floor((minX - majorAnchorX) / step) * step;
+            if (firstMajorX < minX - eps) firstMajorX += step;
+            for (double x = firstMajorX; x <= maxX + eps; x += step)
+                AddVerticalSeg(majorPts, x, minY, maxY);
+
+            // erste Major-Line <= minY, aligned an majorAnchorY
+            double firstMajorY = majorAnchorY + Math.Floor((minY - majorAnchorY) / step) * step;
+            if (firstMajorY < minY - eps) firstMajorY += step;
+            for (double y = firstMajorY; y <= maxY + eps; y += step)
+                AddHorizontalSeg(majorPts, y, minX, maxX);
+
             minorPts.Freeze();
             majorPts.Freeze();
 
@@ -2099,6 +2301,8 @@ public partial class MainWindow : Window
             Points = _cachedMajorPoints!
         });
     }
+
+
 
     private void DrawCompass(ModelVisual3D root, ViewType viewType)
     {
