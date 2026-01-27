@@ -15,7 +15,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Assets\pieces\piece_library.v1.json" />
     <None Remove="Assets\pieces\piece_library.v2.json" />
     <None Remove="Assets\projects\presets\altar_L1.json" />
     <None Remove="Assets\projects\presets\altar_L2.json" />
@@ -26,9 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\pieces\piece_library.v1.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Assets\pieces\piece_library.v2.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

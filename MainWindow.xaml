@@ -1,12 +1,17 @@
 ﻿<!-- MainWindow.xaml -->
+
 <Window x:Class="EnshroudedPlanner.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:helix="clr-namespace:HelixToolkit.Wpf;assembly=HelixToolkit.Wpf"
+        xmlns:ui="clr-namespace:EnshroudedPlanner.UI"
         Title="Enshrouded Planner" Height="900" Width="1500"
         x:Name="MainWindowControl"
         PreviewKeyDown="Window_PreviewKeyDown">
 
+    <Window.Resources>
+        <ui:PieceThumbnailConverter x:Key="PieceThumb"/>
+    </Window.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -125,19 +130,148 @@ TextTrimming="CharacterEllipsis"
 
                     <TextBlock FontSize="18" FontWeight="Bold" Text="Element-Auswahl" />
 
-                    <UniformGrid Columns="3" Margin="0,8,0,0">
-                        <ToggleButton x:Name="BtnWalls" Content="Wand/Boden" Margin="2" IsChecked="True"/>
-                        <ToggleButton x:Name="BtnRoofs" Content="Dach" Margin="2"/>
-                        <ToggleButton x:Name="BtnTerrain" Content="Terrain" Margin="2"/>
-                    </UniformGrid>
+<!-- Tool-Auswahl (vorbereitet für spätere Tools wie Kreisbau) -->
+<UniformGrid Columns="3" Margin="0,8,0,0">
+    <ToggleButton x:Name="BtnToolBrush" Content="Pinsel" Margin="2" IsChecked="True"/>
+    <ToggleButton x:Name="BtnToolCircle" Content="Kreisbau (später)" Margin="2" IsEnabled="False" Opacity="0.65"/>
+    <ToggleButton x:Name="BtnToolReserved" Content="Tool (später)" Margin="2" IsEnabled="False" Opacity="0.65"/>
+</UniformGrid>
 
-                    <ToggleButton x:Name="BtnRemoveMode" Content="Entfernen" Margin="2" />
+<ToggleButton x:Name="BtnRemoveMode" Content="Entfernen" Margin="2" />
 
-                    <TextBlock Margin="0,10,0,0" FontWeight="SemiBold" Text="Kategorie"/>
-                    <ComboBox x:Name="CategoryCombo" Margin="0,4,0,0" />
+<!-- 1M Facet-Filter (Struktur/Dach/Terrain) – wirkt nur auf Kategorie "1M" -->
+<UniformGrid x:Name="FacetFilterBar" Columns="3" Margin="0,6,0,0">
+    <ToggleButton x:Name="BtnFacetStructure" Content="🧱 Struktur" Margin="2" IsChecked="True" ToolTip="Filter: Struktur"/>
+    <ToggleButton x:Name="BtnFacetRoof" Content="🏠 Dach" Margin="2" ToolTip="Filter: Dach"/>
+    <ToggleButton x:Name="BtnFacetTerrain" Content="⛰ Terrain" Margin="2" ToolTip="Filter: Terrain"/>
+</UniformGrid>
 
-                    <TextBlock Margin="0,10,0,0" FontWeight="SemiBold" Text="Piece"/>
-                    <ListBox x:Name="PieceList" Height="220" Margin="0,4,0,0"/>
+<!-- Kategorien links, Elemente rechts (wie In-Game) -->
+<Grid Margin="0,10,0,0">
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="120"/>
+        <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+
+    <StackPanel Grid.Column="0">
+        <TextBlock FontWeight="SemiBold" Text="Kategorie"/>
+        <ListBox x:Name="CategoryList" Margin="0,4,0,0" MinHeight="220">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}">
+                    <Setter Property="Margin" Value="0,0,0,4"/>
+                    <Setter Property="Padding" Value="6,4"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="Background" Value="#FFEFEFEF"/>
+                    <Setter Property="BorderBrush" Value="#FFBDBDBD"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                <Border x:Name="Bd"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="3"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#FFCCE8FF"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#FF2D7DCC"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#FFF7F7F7"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+    </StackPanel>
+
+    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+        <TextBlock FontWeight="SemiBold" Text="Elemente"/>
+        <ListBox x:Name="PieceList"
+         MinHeight="220"
+         Margin="0,4,0,0"
+         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+         ScrollViewer.VerticalScrollBarVisibility="Auto">
+    <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+            <WrapPanel IsItemsHost="True"/>
+        </ItemsPanelTemplate>
+    </ListBox.ItemsPanel>
+
+    <!-- Quadratische Kacheln (Wrap) -->
+    <ListBox.ItemContainerStyle>
+        <Style TargetType="{x:Type ListBoxItem}">
+            <Setter Property="Width" Value="72"/>
+            <Setter Property="Height" Value="72"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                        <Border x:Name="Bd"
+                                CornerRadius="4"
+                                BorderBrush="#FFBDBDBD"
+                                BorderThickness="1"
+                                Background="#FFF6F6F6">
+                            <Grid Margin="6" ToolTip="{Binding DisplayName}">
+    <!-- Platzhalter-Icon (später Thumbnail-Render) -->
+    <Border CornerRadius="4"
+            BorderBrush="#FFD5D5D5"
+            BorderThickness="1"
+            Background="#FFFFFFFF">
+        <Image Source="{Binding Converter={StaticResource PieceThumb}}"
+               Stretch="Uniform"
+               SnapsToDevicePixels="True"/>
+    </Border>
+
+    <!-- Name nur bei Hover -->
+    <Border x:Name="HoverLabel"
+            Visibility="Collapsed"
+            VerticalAlignment="Bottom"
+            Margin="2"
+            CornerRadius="4"
+            Background="#AA000000"
+            Padding="4">
+        <TextBlock Text="{Binding DisplayName}"
+                   Foreground="White"
+                   FontSize="10"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   MaxHeight="28"/>
+    </Border>
+</Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF2D7DCC"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#FFEEF6FF"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF7FB8F2"/>
+                                <Setter TargetName="HoverLabel" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </ListBox.ItemContainerStyle>
+</ListBox>
+    </StackPanel>
+</Grid>
                 </StackPanel>
             </ScrollViewer>
         </DockPanel>

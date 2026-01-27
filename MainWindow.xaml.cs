@@ -21,6 +21,8 @@ using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using EnshroudedPlanner.Rendering.Materials;
 using EnshroudedPlanner.Rendering.Voxels;
+using EnshroudedPlanner.Elements;
+
 
 namespace EnshroudedPlanner;
 
@@ -192,6 +194,13 @@ public partial class MainWindow : Window
     private string? _lastBlueprintPath = null;
 
     private Piece? _selectedPiece = null;
+    // SYS-1: Element-Registry (Metadata-Layer)
+    private ElementRegistry _elementRegistry = new();
+    private string? _selectedElementId = null;
+    // SYS-1.1: Facet-Filter (Struktur/Dach/Terrain) – UI-only, exklusiv
+    private bool _suppressFacetEvents = false;
+
+
 
     private MaterialLookup? _matLookup;
     private int _previewRotY = 0;
@@ -327,6 +336,9 @@ public partial class MainWindow : Window
 
 
         LoadLibrary();
+        // SYS-1: Element-Registry (nur Metadaten; keine Placement/Offset/Rotation-Änderungen)
+        _elementRegistry = ElementRegistry.BuildFromPieceLibrary(_library);
+
         InitializeProject();
 
         // ===============================
@@ -1692,11 +1704,27 @@ public partial class MainWindow : Window
         };
 
 
-        CategoryCombo.DisplayMemberPath = "DisplayName";
-        CategoryCombo.SelectionChanged += (_, __) => RefreshPieces();
+        // Palette-Kategorien kommen ab SYS-1 aus der Element-Registry (nicht mehr hardcoded UiCategory).
 
-        if (_library.Categories.Count > 0)
-            CategoryCombo.SelectedIndex = 0;
+        var palCats = _elementRegistry.Categories.Values
+            .OrderBy(c => c.SortIndex)
+            .ToList();
+
+        // NEW: Robust gegen UI-Varianten (ListBox "CategoryList" oder altes ComboBox "CategoryCombo").
+        if (FindName("CategoryList") is ListBox categoryList)
+        {
+            categoryList.DisplayMemberPath = "DisplayName";
+            categoryList.SelectionChanged += (_, __) => { UpdateFacetFilterEnabled(); RefreshPieces(); };
+            categoryList.ItemsSource = palCats;
+            categoryList.SelectedIndex = palCats.Count > 0 ? 0 : -1;
+        }
+        else if (FindName("CategoryCombo") is ComboBox categoryCombo)
+        {
+            categoryCombo.DisplayMemberPath = "DisplayName";
+            categoryCombo.SelectionChanged += (_, __) => { UpdateFacetFilterEnabled(); RefreshPieces(); };
+            categoryCombo.ItemsSource = palCats;
+            categoryCombo.SelectedIndex = palCats.Count > 0 ? 0 : -1;
+        }
 
         PieceList.SelectionChanged += (_, __) =>
         {
@@ -1704,12 +1732,19 @@ public partial class MainWindow : Window
             _importArmed = false;
             _pendingImportSnippet = null;
 
+                        // Beim Piece-Select: Pinsel-Tool deaktivieren (falls aktiv)
+            if (FindName("BtnToolBrush") is System.Windows.Controls.Primitives.ToggleButton b)
+                b.IsChecked = false;
+
             _selectedPiece = PieceList.SelectedItem as Piece;
+            _selectedElementId = (_selectedPiece != null) ? _elementRegistry.TryGetElementIdByPieceId(_selectedPiece.Id) : null;
+
             _previewRotY = 0;
             RedrawAll();
         };
 
         RefreshPieces();
+        UpdateFacetFilterEnabled();
 
         BtnUndo.Click += (_, __) => Undo();
         BtnRedo.Click += (_, __) => Redo();
@@ -1728,18 +1763,118 @@ public partial class MainWindow : Window
         CheckShowCompass.Checked += (_, __) => RedrawAll();
         CheckShowCompass.Unchecked += (_, __) => RedrawAll();
 
-        BtnWalls.Checked += (_, __) => SetUiRootGroup(UiRootGroup.Structure);
-        BtnRoofs.Checked += (_, __) => SetUiRootGroup(UiRootGroup.Roof);
-        BtnTerrain.Checked += (_, __) => SetUiRootGroup(UiRootGroup.Terrain);
-        BtnWalls.IsChecked = true;
-        SetUiRootGroup(UiRootGroup.Structure);
 
-        // ===== Remove-Mode Button =====
+// ===== Tool: Pinsel (läuft wie bisher: "ohne Piece" = 1 Voxel setzen). =====
+if (FindName("BtnToolBrush") is System.Windows.Controls.Primitives.ToggleButton brush)
+{
+    brush.Checked += (_, __) =>
+    {
+        // Piece-Auswahl leeren -> bestehendes Verhalten: Einzelvoxel setzen / PaintVoxels je nach Klick
+        PieceList.SelectedItem = null;
+        _selectedPiece = null;
+        _selectedElementId = "tool:brush";
+        _previewRotY = 0;
+        RedrawAll();
+    };
+
+    brush.Unchecked += (_, __) =>
+    {
+        // Wenn kein Piece ausgewählt ist, bleiben wir im "ohne Piece"-Modus – kein Side-Effect.
+        if (_selectedPiece == null)
+        {
+            _selectedElementId = null;
+            RedrawAll();
+        }
+    };
+}
+
+                // ===== Remove-Mode Button =====
         // Wir verwenden FindName, damit das Projekt auch kompiliert, falls der Button noch nicht im XAML existiert.
         if (FindName("BtnRemoveMode") is System.Windows.Controls.Primitives.ToggleButton rm)
         {
             rm.Checked += (_, __) => { _removeMode = true; RedrawAll(); };
             rm.Unchecked += (_, __) => { _removeMode = false; RedrawAll(); };
+        }
+
+        // ===== Facet-Filter (Struktur/Dach/Terrain) – wirkt nur auf Kategorie "PAL_1M" =====
+        HookFacetFilterButton("BtnFacetStructure");
+        HookFacetFilterButton("BtnFacetRoof");
+        HookFacetFilterButton("BtnFacetTerrain");
+
+        // Initial enable/disable based on selected palette category.
+        UpdateFacetFilterEnabled();
+    }
+
+    private void HookFacetFilterButton(string xName)
+{
+    if (FindName(xName) is System.Windows.Controls.Primitives.ToggleButton b)
+    {
+        b.Checked += OnFacetFilterChanged;
+        b.Unchecked += OnFacetFilterChanged;
+    }
+}
+
+private void OnFacetFilterChanged(object? sender, RoutedEventArgs e)
+{
+    if (_suppressFacetEvents) return;
+
+    var btnS = FindName("BtnFacetStructure") as System.Windows.Controls.Primitives.ToggleButton;
+    var btnR = FindName("BtnFacetRoof") as System.Windows.Controls.Primitives.ToggleButton;
+    var btnT = FindName("BtnFacetTerrain") as System.Windows.Controls.Primitives.ToggleButton;
+
+    if (btnS == null || btnR == null || btnT == null)
+    {
+        RefreshPieces();
+        return;
+    }
+
+    if (sender is not System.Windows.Controls.Primitives.ToggleButton changed)
+    {
+        RefreshPieces();
+        return;
+    }
+
+    // Exklusiv: genau EIN Facet-Schalter aktiv.
+    try
+    {
+        _suppressFacetEvents = true;
+
+        if (changed.IsChecked == true)
+        {
+            if (!ReferenceEquals(changed, btnS)) btnS.IsChecked = false;
+            if (!ReferenceEquals(changed, btnR)) btnR.IsChecked = false;
+            if (!ReferenceEquals(changed, btnT)) btnT.IsChecked = false;
+        }
+        else
+        {
+            // Nie "alle aus" erlauben – wenn der User den letzten ausschaltet, schalten wir ihn wieder ein.
+            if (btnS.IsChecked != true && btnR.IsChecked != true && btnT.IsChecked != true)
+            {
+                changed.IsChecked = true;
+            }
+        }
+    }
+    finally
+    {
+        _suppressFacetEvents = false;
+    }
+
+    RefreshPieces();
+}
+
+private void UpdateFacetFilterEnabled()
+    {
+        var cat =
+            (FindName("CategoryList") as ListBox)?.SelectedItem as EnshroudedPlanner.Elements.CategoryDefinition
+            ?? (FindName("CategoryCombo") as ComboBox)?.SelectedItem as EnshroudedPlanner.Elements.CategoryDefinition;
+
+        // Filter gilt nur für die 1M-Kategorie (wie in Enshrouded: 1M enthält Struktur/Dach/Terrain).
+        bool enable = cat != null && string.Equals(cat.Id, "PAL_1M", StringComparison.Ordinal);
+
+        if (FindName("FacetFilterBar") is FrameworkElement bar)
+        {
+            bar.IsEnabled = enable;
+            bar.Opacity = enable ? 1.0 : 0.55;
         }
     }
 
@@ -1807,85 +1942,65 @@ public partial class MainWindow : Window
         }
     }
 
-    private void FilterByGroup(string group)
-    {
-        var filtered = _library.Categories
-            .Where(c => c.Id.Contains(group, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        CategoryCombo.ItemsSource = filtered;
-        CategoryCombo.SelectedIndex = filtered.Count > 0 ? 0 : -1;
-    }
-
-    private enum UiRootGroup { Structure, Roof, Terrain }
-
-    private sealed class UiCategory
-    {
-        public required string Id { get; init; }          // z.B. "WALL"
-        public required string DisplayName { get; init; } // z.B. "Wände"
-        public required Func<string, bool> MatchCategoryId { get; init; } // prüft Piece.CategoryId
-    }
-
-    private UiRootGroup _uiRoot = UiRootGroup.Structure;
-    private List<UiCategory> _uiCats = new();
-
-    private void SetUiRootGroup(UiRootGroup root)
-    {
-        _uiRoot = root;
-
-        // Buttons exklusiv (nur einer aktiv)
-        if (root != UiRootGroup.Structure) BtnWalls.IsChecked = false;
-        if (root != UiRootGroup.Roof) BtnRoofs.IsChecked = false;
-        if (root != UiRootGroup.Terrain) BtnTerrain.IsChecked = false;
-
-        _uiCats = root switch
-        {
-            UiRootGroup.Structure => new List<UiCategory>
-        {
-            new UiCategory { Id="WALL",  DisplayName="Wände",        MatchCategoryId = cid => cid.StartsWith("WALL") },
-            new UiCategory { Id="FLOOR", DisplayName="Böden",        MatchCategoryId = cid => cid.StartsWith("FLOOR") },
-            new UiCategory { Id="BLOCK", DisplayName="Blöcke",       MatchCategoryId = cid => cid.StartsWith("BLOCK") },
-            new UiCategory { Id="ALTAR", DisplayName="Flammenaltar", MatchCategoryId = cid => cid == "ALTAR" },
-            // später: STAIRS, PILLAR, BEAM etc.
-        },
-            UiRootGroup.Roof => new List<UiCategory>
-        {
-            new UiCategory { Id="ROOF", DisplayName="Dächer", MatchCategoryId = cid => cid.StartsWith("ROOF") }
-        },
-            UiRootGroup.Terrain => new List<UiCategory>
-        {
-            new UiCategory { Id="TERRAIN", DisplayName="Terrain", MatchCategoryId = cid => cid.StartsWith("TERRAIN") }
-        },
-            _ => new List<UiCategory>()
-        };
-
-        CategoryCombo.ItemsSource = _uiCats;
-        CategoryCombo.DisplayMemberPath = "DisplayName";
-        CategoryCombo.SelectedIndex = _uiCats.Count > 0 ? 0 : -1;
-
-        RefreshPieces();
-    }
-
     private void RefreshPieces()
     {
-        var uiCat = CategoryCombo.SelectedItem as UiCategory;
-        if (uiCat == null)
+        var cat =
+            (FindName("CategoryList") as ListBox)?.SelectedItem as EnshroudedPlanner.Elements.CategoryDefinition
+            ?? (FindName("CategoryCombo") as ComboBox)?.SelectedItem as EnshroudedPlanner.Elements.CategoryDefinition;
+        if (cat == null)
         {
             PieceList.ItemsSource = null;
             return;
         }
-
         List<Piece> list;
 
         // Flammenaltar / Freebuild sind "virtuelle" Palette-Einträge (keine echten Library-Pieces)
-        if (uiCat.Id == "ALTAR")
+        if (string.Equals(cat.Id, "ALTAR", StringComparison.Ordinal))
         {
             list = BuildAltarPalette();
         }
         else
         {
-            list = _library.Pieces
-                .Where(p => uiCat.MatchCategoryId(p.CategoryId))
+            
+// Facet-Filter (nur für 1M): Struktur ODER Dach ODER Terrain (exklusiv).
+HashSet<ElementFacet>? facetFilter = null;
+if (string.Equals(cat.Id, "PAL_1M", StringComparison.Ordinal))
+{
+    var btnS = FindName("BtnFacetStructure") as System.Windows.Controls.Primitives.ToggleButton;
+    var btnR = FindName("BtnFacetRoof") as System.Windows.Controls.Primitives.ToggleButton;
+    var btnT = FindName("BtnFacetTerrain") as System.Windows.Controls.Primitives.ToggleButton;
+
+    bool fStructure = btnS?.IsChecked == true;
+    bool fRoof = btnR?.IsChecked == true;
+    bool fTerrain = btnT?.IsChecked == true;
+
+    // Safety: falls doch mal keiner aktiv ist, default zu Struktur.
+    if (!fStructure && !fRoof && !fTerrain && btnS != null)
+    {
+        try { _suppressFacetEvents = true; btnS.IsChecked = true; }
+        finally { _suppressFacetEvents = false; }
+        fStructure = true;
+    }
+
+    var selected =
+        fRoof ? ElementFacet.Roof :
+        fTerrain ? ElementFacet.Terrain :
+        ElementFacet.Structure;
+
+    facetFilter = new HashSet<ElementFacet> { selected };
+}list = _library.Pieces
+                .Where(p =>
+                {
+                    var elId = _elementRegistry.TryGetElementIdByPieceId(p.Id);
+                    if (elId == null) return false;
+                    if (!_elementRegistry.Elements.TryGetValue(elId, out var def)) return false;
+
+                    if (!string.Equals(def.CategoryId, cat.Id, StringComparison.Ordinal)) return false;
+
+                    if (facetFilter != null && !facetFilter.Contains(def.Facet)) return false;
+
+                    return true;
+                })
                 .OrderBy(p => p.DisplayName)
                 .ToList();
         }
